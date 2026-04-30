@@ -1,0 +1,26 @@
+* {
+  box-sizing: border-box;
+  font-weight: 400;
+}
+
+html {
+  height: 100%;
+  background: #f5f7fb;
+  overflow: hidden;
+}
+
+body {
+  height: 100%;
+  margin: 0;
+  overflow: hidden;
+  font-family: 'Geist', ui-sans-serif, system-ui, sans-serif;
+  font-weight: 400;
+}
+
+button,
+textarea,
+input,
+select {
+  font: inherit;
+  font-weight: 400;
+}

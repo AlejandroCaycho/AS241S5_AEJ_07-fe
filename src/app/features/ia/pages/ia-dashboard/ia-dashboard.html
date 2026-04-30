@@ -1,0 +1,229 @@
+<main class="dashboard">
+  <header class="topbar">
+    <div>
+      <h1>EduNovaIA</h1>
+    </div>
+
+    <div class="topbar__right">
+      <div class="metric-strip" aria-label="Metricas del historial">
+        <span>
+          <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M4 5h16M4 12h16M4 19h10" />
+          </svg>
+          <strong>{{ responseCount() }}</strong> registros
+        </span>
+        <span>
+          <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M12 3v18M5 8h14M7 16h10" />
+          </svg>
+          <strong>{{ openRouterCount() }}</strong> OpenRouter
+        </span>
+        <span>
+          <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M4 18 10 6l4 8 2-4 4 8" />
+          </svg>
+          <strong>{{ mistralCount() }}</strong> Mistral
+        </span>
+      </div>
+      <button type="button" class="ghost-button" (click)="loadHistory()" [disabled]="isLoadingHistory()">
+        <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M20 12a8 8 0 1 1-2.34-5.66M20 4v6h-6" />
+        </svg>
+        {{ isLoadingHistory() ? 'Actualizando' : 'Actualizar' }}
+      </button>
+    </div>
+  </header>
+
+  @if (errorMessage()) {
+    <div class="alert" role="alert">
+      <strong>Error de API</strong>
+      <span>{{ errorMessage() }}</span>
+    </div>
+  }
+
+  <section class="studio">
+    <section class="panel composer">
+      <div class="panel-heading">
+        <div>
+          <p class="section-kicker">Prompt</p>
+          <h2>Nueva consulta</h2>
+        </div>
+        <span class="char-counter">{{ promptLength() }} caracteres</span>
+      </div>
+
+      <form [formGroup]="promptForm" (ngSubmit)="processPrompt()">
+        <textarea
+          id="prompt"
+          formControlName="prompt"
+          aria-label="Mensaje para ambos modelos"
+          placeholder="Escribe una consulta para continuar la conversacion con contexto"
+        ></textarea>
+
+        @if (promptForm.controls.prompt.touched && promptForm.controls.prompt.invalid) {
+          <p class="field-error">Ingresa un prompt de al menos 3 caracteres.</p>
+        }
+
+        <div class="prompt-suggestions" aria-label="Prompts rapidos">
+          <button
+            type="button"
+            (click)="usePrompt('Usa el contexto anterior y dame una respuesta mas concreta, con pasos accionables.')"
+          >
+            <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M4 7h16M4 12h10M4 17h7" />
+            </svg>
+            Mas concreto
+          </button>
+          <button
+            type="button"
+            (click)="usePrompt('Compara las respuestas previas y dime cual es mas util, explicando por que.')"
+          >
+            <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M8 5v14M16 5v14M4 9h8M12 15h8" />
+            </svg>
+            Comparar
+          </button>
+          <button
+            type="button"
+            (click)="usePrompt('Continua la conversacion anterior y propon la siguiente mejor accion.')"
+          >
+            <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M5 12h14M13 6l6 6-6 6" />
+            </svg>
+            Continuar
+          </button>
+        </div>
+
+        <button type="submit" class="primary-button" [disabled]="promptForm.invalid || isProcessing()">
+          <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M22 2 11 13M22 2l-7 20-4-9-9-4 20-7Z" />
+          </svg>
+          {{ isProcessing() ? 'Procesando...' : 'Enviar a modelos' }}
+        </button>
+      </form>
+    </section>
+
+    <section class="panel history-panel" aria-labelledby="history-title">
+      <div class="panel-heading">
+        <div>
+          <p class="section-kicker">Historial</p>
+          <h2 id="history-title">{{ historyTitle() }}</h2>
+        </div>
+      </div>
+
+      <div class="filter-group" aria-label="Filtro por fuente">
+        <button type="button" [class.active]="selectedSource() === 'all'" (click)="loadHistory('all')">
+          Todo
+        </button>
+        <button
+          type="button"
+          [class.active]="selectedSource() === 'openrouter'"
+          (click)="loadHistory('openrouter')"
+        >
+          OpenRouter
+        </button>
+        <button
+          type="button"
+          [class.active]="selectedSource() === 'mistral'"
+          (click)="loadHistory('mistral')"
+        >
+          Mistral
+        </button>
+      </div>
+
+      @if (isLoadingHistory()) {
+        <div class="history-list">
+          <div class="history-skeleton"></div>
+          <div class="history-skeleton"></div>
+          <div class="history-skeleton"></div>
+        </div>
+      } @else if (visibleHistory().length === 0) {
+        <div class="empty-state">
+          <svg class="empty-icon" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M4 6h16M4 12h16M4 18h10" />
+          </svg>
+          <strong>Sin historial</strong>
+          <span>Procesa un prompt para empezar.</span>
+        </div>
+      } @else {
+        <div class="history-list">
+          @for (item of visibleHistory(); track trackResponse($index, item)) {
+            <button
+              type="button"
+              class="history-item"
+              [class.active]="isSelected(item)"
+              (click)="selectHistory(item)"
+            >
+              <span class="history-item__meta">
+                <span [ngClass]="['source-pill', sourceClass(item.source)]">
+                  {{ sourceLabel(item.source) }}
+                </span>
+                <time>{{ item.fecha }}</time>
+              </span>
+              <strong>{{ cleanText(item.prompt) }}</strong>
+              <span>{{ cleanText(item.respuestaIa) }}</span>
+            </button>
+          }
+        </div>
+      }
+    </section>
+
+    <section class="panel reader">
+      <div class="reader__header">
+        <div>
+          <p class="section-kicker">{{ visibleResults().length ? 'Comparacion activa' : 'Detalle del historial' }}</p>
+          <h2>{{ visibleResults().length ? 'Respuestas recientes' : 'Respuesta completa' }}</h2>
+        </div>
+        @if (!visibleResults().length && selectedHistory()) {
+          <span [ngClass]="['source-pill', sourceClass(selectedHistory()!.source)]">
+            {{ sourceLabel(selectedHistory()!.source) }}
+          </span>
+        }
+      </div>
+
+      @if (isProcessing()) {
+        <div class="reader-skeleton">
+          <span></span>
+          <span></span>
+        </div>
+      } @else if (visibleResults().length) {
+        <div class="response-grid">
+          @for (response of visibleResults(); track trackResponse($index, response)) {
+            <article class="response-card">
+              <div class="response-card__header">
+                <span [ngClass]="['source-pill', sourceClass(response.source)]">
+                  {{ sourceLabel(response.source) }}
+                </span>
+                <time>{{ response.fecha }}</time>
+              </div>
+              <h3>{{ response.model }}</h3>
+              <div class="response-content">{{ cleanText(response.respuestaIa) }}</div>
+            </article>
+          }
+        </div>
+      } @else if (selectedHistory()) {
+        <article class="history-detail">
+          <div class="detail-meta">
+            <span>{{ selectedHistory()!.model }}</span>
+            <time>{{ selectedHistory()!.fecha }}</time>
+          </div>
+          <section>
+            <h3>Prompt</h3>
+            <p>{{ cleanText(selectedHistory()!.prompt) }}</p>
+          </section>
+          <section class="full-answer">
+            <h3>Respuesta</h3>
+            <div class="response-content">{{ cleanText(selectedHistory()!.respuestaIa) }}</div>
+          </section>
+        </article>
+      } @else {
+        <div class="empty-state empty-state--reader">
+          <svg class="empty-icon" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M12 3v6l4 2M4 19h16M6 15h12" />
+          </svg>
+          <strong>Listo para trabajar</strong>
+          <span>Envia una consulta o selecciona una respuesta del historial.</span>
+        </div>
+      }
+    </section>
+  </section>
+</main>
