@@ -9,9 +9,11 @@ import { IAService } from '../../services/ia.service';
 
 type SourceFilter = 'all' | 'openrouter' | 'mistral';
 
+import { MarkdownPipe } from '../../../../shared/pipes/markdown.pipe';
+
 @Component({
   selector: 'app-ia-dashboard',
-  imports: [CommonModule, ReactiveFormsModule],
+  imports: [CommonModule, ReactiveFormsModule, MarkdownPipe],
   templateUrl: './ia-dashboard.html',
   styleUrl: './ia-dashboard.scss',
 })
@@ -75,6 +77,14 @@ export class IADashboard {
         },
         error: (error: ApiError) => this.errorMessage.set(error.message),
       });
+  }
+
+  onEnter(event: Event): void {
+    const keyboardEvent = event as KeyboardEvent;
+    if (!keyboardEvent.shiftKey) {
+      event.preventDefault();
+      this.processPrompt();
+    }
   }
 
   loadHistory(source: SourceFilter = this.selectedSource()): void {
