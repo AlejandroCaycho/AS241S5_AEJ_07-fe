@@ -1,0 +1,218 @@
+{
+  "info": {
+    "name": "AS241S5 - IA API (Reactive)",
+    "_postman_id": "aej07-ia-api-collection",
+    "description": "Coleccion CRUD completa para la API reactiva de IA. Base URL: http://localhost:8080",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "CREATE - Procesar Prompt",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"prompt\": \"Explica que es la programacion reactiva en 3 puntos\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "http://localhost:8080/ia/procesar",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "8080",
+          "path": ["ia", "procesar"]
+        },
+        "description": "Envia un prompt a OpenRouter y Mistral en paralelo. Guarda ambas respuestas en BD y las retorna como Flux."
+      },
+      "response": [
+        {
+          "name": "Respuesta exitosa",
+          "status": "OK",
+          "code": 200,
+          "body": "[\n  {\n    \"id\": 1,\n    \"source\": \"openrouter\",\n    \"model\": \"mistralai/mistral-7b-instruct\",\n    \"prompt\": \"Explica que es la programacion reactiva en 3 puntos\",\n    \"respuestaIa\": \"1. Flujos asincronos de datos...\\n2. Backpressure...\\n3. Operadores funcionales...\",\n    \"fecha\": \"11/05/2026 08:30:00\"\n  },\n  {\n    \"id\": 2,\n    \"source\": \"mistral\",\n    \"model\": \"mistral-small-latest\",\n    \"prompt\": \"Explica que es la programacion reactiva en 3 puntos\",\n    \"respuestaIa\": \"1. Paradigma basado en eventos...\\n2. Manejo no bloqueante...\\n3. Composicion de streams...\",\n    \"fecha\": \"11/05/2026 08:30:01\"\n  }\n]"
+        }
+      ]
+    },
+    {
+      "name": "READ - Historial Completo",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:8080/ia/historial",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "8080",
+          "path": ["ia", "historial"]
+        },
+        "description": "Retorna todos los registros de IA ordenados por fecha descendente."
+      },
+      "response": [
+        {
+          "name": "Lista de registros",
+          "status": "OK",
+          "code": 200,
+          "body": "[\n  {\n    \"id\": 2,\n    \"source\": \"mistral\",\n    \"model\": \"mistral-small-latest\",\n    \"prompt\": \"Explica que es la programacion reactiva\",\n    \"respuestaIa\": \"Es un paradigma que trabaja con flujos de datos...\",\n    \"fecha\": \"11/05/2026 08:30:01\"\n  },\n  {\n    \"id\": 1,\n    \"source\": \"openrouter\",\n    \"model\": \"mistralai/mistral-7b-instruct\",\n    \"prompt\": \"Explica que es la programacion reactiva\",\n    \"respuestaIa\": \"La programacion reactiva permite manejar flujos asincronos...\",\n    \"fecha\": \"11/05/2026 08:30:00\"\n  }\n]"
+        }
+      ]
+    },
+    {
+      "name": "READ - Historial por Fuente (openrouter)",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:8080/ia/historial/fuente/openrouter",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "8080",
+          "path": ["ia", "historial", "fuente", "openrouter"]
+        },
+        "description": "Filtra el historial por fuente. Valores validos: openrouter o mistral."
+      },
+      "response": [
+        {
+          "name": "Historial de openrouter",
+          "status": "OK",
+          "code": 200,
+          "body": "[\n  {\n    \"id\": 1,\n    \"source\": \"openrouter\",\n    \"model\": \"mistralai/mistral-7b-instruct\",\n    \"prompt\": \"Explica que es la programacion reactiva\",\n    \"respuestaIa\": \"La programacion reactiva permite manejar flujos asincronos...\",\n    \"fecha\": \"11/05/2026 08:30:00\"\n  }\n]"
+        }
+      ]
+    },
+    {
+      "name": "READ - Historial por Fuente (mistral)",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:8080/ia/historial/fuente/mistral",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "8080",
+          "path": ["ia", "historial", "fuente", "mistral"]
+        },
+        "description": "Filtra el historial solo por respuestas de Mistral."
+      },
+      "response": [
+        {
+          "name": "Historial de mistral",
+          "status": "OK",
+          "code": 200,
+          "body": "[\n  {\n    \"id\": 2,\n    \"source\": \"mistral\",\n    \"model\": \"mistral-small-latest\",\n    \"prompt\": \"Explica que es la programacion reactiva\",\n    \"respuestaIa\": \"Es un paradigma que trabaja con flujos de datos...\",\n    \"fecha\": \"11/05/2026 08:30:01\"\n  }\n]"
+        }
+      ]
+    },
+    {
+      "name": "UPDATE - Actualizar Prompt por ID",
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"prompt\": \"Explica los beneficios de Spring WebFlux en comparacion con Spring MVC\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "http://localhost:8080/ia/historial/1",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "8080",
+          "path": ["ia", "historial", "1"]
+        },
+        "description": "Actualiza el prompt del registro con id=1 y re-consulta ambas IAs con el nuevo texto. Retorna el registro actualizado mas uno nuevo de Mistral."
+      },
+      "response": [
+        {
+          "name": "Actualizacion exitosa",
+          "status": "OK",
+          "code": 200,
+          "body": "[\n  {\n    \"id\": 1,\n    \"source\": \"openrouter\",\n    \"model\": \"mistralai/mistral-7b-instruct\",\n    \"prompt\": \"Explica los beneficios de Spring WebFlux en comparacion con Spring MVC\",\n    \"respuestaIa\": \"Spring WebFlux es no bloqueante y usa el modelo reactivo...\",\n    \"fecha\": \"11/05/2026 08:35:00\"\n  },\n  {\n    \"id\": 3,\n    \"source\": \"mistral\",\n    \"model\": \"mistral-small-latest\",\n    \"prompt\": \"Explica los beneficios de Spring WebFlux en comparacion con Spring MVC\",\n    \"respuestaIa\": \"WebFlux permite manejar mas conexiones simultaneas con menos hilos...\",\n    \"fecha\": \"11/05/2026 08:35:01\"\n  }\n]"
+        },
+        {
+          "name": "Error - ID no encontrado",
+          "status": "Internal Server Error",
+          "code": 500,
+          "body": "{\n  \"error\": \"Registro no encontrado con id: 99\"\n}"
+        }
+      ]
+    },
+    {
+      "name": "DELETE - Eliminar por ID",
+      "request": {
+        "method": "DELETE",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:8080/ia/historial/2",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "8080",
+          "path": ["ia", "historial", "2"]
+        },
+        "description": "Elimina el registro con id=2. Retorna 204 No Content si fue exitoso."
+      },
+      "response": [
+        {
+          "name": "Eliminacion exitosa",
+          "status": "No Content",
+          "code": 204,
+          "body": ""
+        },
+        {
+          "name": "Error - ID no encontrado",
+          "status": "Internal Server Error",
+          "code": 500,
+          "body": "{\n  \"error\": \"Registro no encontrado con id: 99\"\n}"
+        }
+      ]
+    },
+    {
+      "name": "DELETE - Eliminar TODO el Historial",
+      "request": {
+        "method": "DELETE",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:8080/ia/historial",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "8080",
+          "path": ["ia", "historial"]
+        },
+        "description": "Elimina TODOS los registros de la tabla ai_responses. Retorna 204 No Content."
+      },
+      "response": [
+        {
+          "name": "Eliminacion total exitosa",
+          "status": "No Content",
+          "code": 204,
+          "body": ""
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:8080",
+      "type": "string"
+    }
+  ]
+}

@@ -1,7 +1,7 @@
 <main class="dashboard">
   <header class="topbar">
     <div>
-      <h1>EduNovaIA</h1>
+      <h1>EduNova IA</h1>
     </div>
 
     <div class="topbar__right">
@@ -25,6 +25,7 @@
           <strong>{{ mistralCount() }}</strong> Mistral
         </span>
       </div>
+
       <button type="button" class="ghost-button" (click)="loadHistory()" [disabled]="isLoadingHistory()">
         <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
           <path d="M20 12a8 8 0 1 1-2.34-5.66M20 4v6h-6" />
@@ -35,196 +36,322 @@
   </header>
 
   @if (errorMessage()) {
-    <div class="alert" role="alert">
-      <strong>Error de API</strong>
-      <span>{{ errorMessage() }}</span>
-    </div>
+  <div class="alert" role="alert">
+    <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
+      <path
+        d="M12 9v4m0 4h.01M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+    </svg>
+    <strong>Error de API</strong>
+    <span>{{ errorMessage() }}</span>
+  </div>
   }
 
   <section class="studio">
-    <section class="panel composer">
-      <div class="panel-heading">
-        <div>
-          <p class="section-kicker">Prompt</p>
-          <h2>Nueva consulta</h2>
-        </div>
-        <span class="char-counter">{{ promptLength() }} caracteres</span>
-      </div>
 
-      <form [formGroup]="promptForm" (ngSubmit)="processPrompt()">
-        <textarea
-          id="prompt"
-          formControlName="prompt"
-          aria-label="Mensaje para ambos modelos"
-          placeholder="Escribe una consulta para continuar la conversacion con contexto"
-          (keydown.enter)="onEnter($event)"
-        ></textarea>
-
-        @if (promptForm.controls.prompt.touched && promptForm.controls.prompt.invalid) {
-          <p class="field-error">Ingresa un prompt de al menos 3 caracteres.</p>
-        }
-
-        <div class="prompt-suggestions" aria-label="Prompts rapidos">
-          <button
-            type="button"
-            (click)="usePrompt('Usa el contexto anterior y dame una respuesta mas concreta, con pasos accionables.')"
-          >
-            <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
-              <path d="M4 7h16M4 12h10M4 17h7" />
-            </svg>
-            Accionar
-          </button>
-          <button
-            type="button"
-            (click)="usePrompt('Compara las respuestas previas y dime cual es mas util, explicando por que.')"
-          >
-            <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
-              <path d="M8 5v14M16 5v14M4 9h8M12 15h8" />
-            </svg>
-            Comparar
-          </button>
-          <button
-            type="button"
-            (click)="usePrompt('Continua la conversacion anterior y propon la siguiente mejor accion.')"
-          >
-            <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
-              <path d="M5 12h14M13 6l6 6-6 6" />
-            </svg>
-            Continuar
-          </button>
-        </div>
-
-        <button type="submit" class="primary-button" [disabled]="promptForm.invalid || isProcessing()">
-          <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
-            <path d="M22 2 11 13M22 2l-7 20-4-9-9-4 20-7Z" />
-          </svg>
-          {{ isProcessing() ? 'Procesando...' : 'Enviar' }}
-        </button>
-      </form>
-    </section>
-
-    <section class="panel history-panel" aria-labelledby="history-title">
+    <aside class="panel history-panel" aria-labelledby="history-title">
       <div class="panel-heading">
         <div>
           <p class="section-kicker">Historial</p>
           <h2 id="history-title">{{ historyTitle() }}</h2>
         </div>
+
+        <button type="button" class="ghost-button" (click)="newChat()"
+          [disabled]="activeResponses().length === 0 && selectedHistoryId() === null">
+          <svg class="icon" viewBox="0 0 24 24">
+            <path d="M12 5v14M5 12h14" />
+          </svg>
+        </button>
+        @if (visibleHistory().length > 0) {
+        <button type="button" class="icon-btn icon-btn--danger" title="Eliminar todo el historial"
+          (click)="showDeleteAllConfirm.set(true)">
+          <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M3 6h18M8 6V4h8v2M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
+          </svg>
+        </button>
+        }
       </div>
 
+      @if (showDeleteAllConfirm()) {
+      <div class="confirm-bar" role="alert">
+        <span>¿Eliminar todo el historial?</span>
+        <div class="confirm-bar__actions">
+          <button type="button" class="ghost-button ghost-button--sm" (click)="showDeleteAllConfirm.set(false)">
+            Cancelar
+          </button>
+          <button type="button" class="danger-button danger-button--sm" (click)="confirmarEliminarTodo()">
+            Confirmar
+          </button>
+        </div>
+      </div>
+      }
+
       <div class="filter-group" aria-label="Filtro por fuente">
-        <button type="button" [class.active]="selectedSource() === 'all'" (click)="loadHistory('all')">
+        <button type="button" [class.active]="selectedSource() === 'all'" (click)="selectedSource.set('all')">
+          <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M4 6h16M4 12h16M4 18h10" />
+          </svg>
           Todo
         </button>
-        <button
-          type="button"
-          [class.active]="selectedSource() === 'openrouter'"
-          (click)="loadHistory('openrouter')"
-        >
+        <button type="button" [class.active]="selectedSource() === 'openrouter'"
+          (click)="selectedSource.set('openrouter')">
+          <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" />
+          </svg>
           OpenRouter
         </button>
-        <button
-          type="button"
-          [class.active]="selectedSource() === 'mistral'"
-          (click)="loadHistory('mistral')"
-        >
+        <button type="button" [class.active]="selectedSource() === 'mistral'" (click)="selectedSource.set('mistral')">
+          <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
+            <path
+              d="M12 21a9 9 0 1 1 0-18 9 9 0 0 1 0 18zM9.75 10.5c0 .69.56 1.25 1.25 1.25s1.25-.56 1.25-1.25-.56-1.25-1.25-1.25-1.25.56-1.25 1.25zm4.5 0c0 .69.56 1.25 1.25 1.25s1.25-.56 1.25-1.25-.56-1.25-1.25-1.25-1.25.56-1.25 1.25z" />
+          </svg>
           Mistral
         </button>
       </div>
 
       @if (isLoadingHistory()) {
-        <div class="history-list">
-          <div class="history-skeleton"></div>
-          <div class="history-skeleton"></div>
-          <div class="history-skeleton"></div>
-        </div>
+      <div class="history-list">
+        <div class="history-skeleton"></div>
+        <div class="history-skeleton"></div>
+        <div class="history-skeleton"></div>
+      </div>
       } @else if (visibleHistory().length === 0) {
-        <div class="empty-state">
-          <svg class="empty-icon" viewBox="0 0 24 24" aria-hidden="true">
-            <path d="M4 6h16M4 12h16M4 18h10" />
-          </svg>
-          <strong>Sin historial</strong>
-          <span>Procesa un prompt para empezar.</span>
-        </div>
+      <div class="empty-state">
+        <svg class="empty-icon" viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M4 6h16M4 12h16M4 18h10" />
+        </svg>
+        <strong>Sin historial</strong>
+        <span>Procesa un prompt para empezar.</span>
+      </div>
       } @else {
-        <div class="history-list">
-          @for (item of visibleHistory(); track trackResponse($index, item)) {
-            <button
-              type="button"
-              class="history-item"
-              [class.active]="isSelected(item)"
-              (click)="selectHistory(item)"
-            >
-              <span class="history-item__meta">
-                <span [ngClass]="['source-pill', sourceClass(item.source)]">
-                  {{ sourceLabel(item.source) }}
-                </span>
-                <time>{{ item.fecha }}</time>
-              </span>
-              <strong>{{ cleanText(item.prompt) }}</strong>
-              <span [innerHTML]="cleanText(item.respuestaIa) | markdown"></span>
-            </button>
-          }
-        </div>
-      }
-    </section>
+      <div class="history-list">
+        @for (item of visibleHistory(); track trackThread($index, item)) {
+        <div class="history-item-wrapper" [class.active]="isSelected(item)">
+          <button type="button" class="history-item" [class.active]="isSelected(item)" (click)="selectHistory(item)">
+            <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
+              <path
+                d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 1 1-7.6-10.7h.3L15 2l3.5 3.5L15 9l-1.2-1.2h-.3a5.5 5.5 0 1 0 5.1 7.1c.1-.2.2-.4.3-.6L21 11.5z" />
+            </svg>
+            <strong>{{ cleanText(item.prompt) }}</strong>
+          </button>
 
-    <section class="panel reader">
-      <div class="reader__header">
-        <div>
-          <p class="section-kicker">{{ visibleResults().length ? 'Comparacion activa' : 'Detalle del historial' }}</p>
-          <h2>{{ visibleResults().length ? 'Respuestas recientes' : 'Respuesta completa' }}</h2>
+          <div class="history-item__actions">
+            <button type="button" class="icon-btn icon-btn--edit" title="Editar y re-consultar"
+              [disabled]="isDeletingThread(item)" (click)="openEditModal(item, $event)">
+              <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
+                <path
+                  d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7M18.5 2.5a2.12 2.12 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+              </svg>
+            </button>
+            <button type="button" class="icon-btn icon-btn--danger" title="Eliminar este hilo"
+              [disabled]="isDeletingThread(item)" (click)="eliminarThread(item, $event)">
+              @if (isDeletingThread(item)) {
+              <svg class="spinner" viewBox="0 0 24 24" fill="none">
+                <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="3" stroke-dasharray="32"
+                  stroke-dashoffset="16" stroke-linecap="round"></circle>
+              </svg>
+              } @else {
+              <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M3 6h18M8 6V4h8v2M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
+              </svg>
+              }
+            </button>
+          </div>
         </div>
-        @if (!visibleResults().length && selectedHistory()) {
-          <span [ngClass]="['source-pill', sourceClass(selectedHistory()!.source)]">
-            {{ sourceLabel(selectedHistory()!.source) }}
-          </span>
         }
       </div>
+      }
+    </aside>
 
-      @if (isProcessing()) {
-        <div class="reader-skeleton">
-          <span></span>
-          <span></span>
-        </div>
-      } @else if (visibleResults().length) {
-        <div class="response-grid">
-          @for (response of visibleResults(); track trackResponse($index, response)) {
-            <article class="response-card">
-              <div class="response-card__header">
-                <span [ngClass]="['source-pill', sourceClass(response.source)]">
-                  {{ sourceLabel(response.source) }}
-                </span>
-                <time>{{ response.fecha }}</time>
+    <main class="workspace">
+
+      <section class="panel reader">
+        <div class="reader-content">
+          @if (isProcessing() || isGeneratingInsight()) {
+          <div class="reader-skeleton">
+            <span></span>
+            <span></span>
+          </div>
+          } @else if (activeResponses().length > 0) {
+          <div class="chat-thread">
+
+            <div class="message message--user">
+              <div class="message__bubble">
+                {{ cleanText(activePrompt()) }}
               </div>
-              <h3>{{ response.model }}</h3>
-              <div class="response-content" [innerHTML]="cleanText(response.respuestaIa) | markdown"></div>
-            </article>
+            </div>
+
+            <div class="response-grid">
+              @for (response of activeResponses(); track trackResponse($index, response)) {
+              <article class="response-card">
+                <div class="response-card__header">
+                  <span [ngClass]="['source-pill', sourceClass(response.source)]">
+                    {{ sourceLabel(response.source) }}
+                  </span>
+                  <span class="response-card__model">{{ response.model }}</span>
+                </div>
+                <div class="response-content" [innerHTML]="cleanText(response.respuestaIa) | markdown"></div>
+              </article>
+              }
+            </div>
+
+            @if (activeResponses().length >= 2 && !showInsightPanel()) {
+            <div class="insight-trigger-row">
+              <button type="button" class="insight-button" (click)="generateInsight()"
+                [disabled]="isGeneratingInsight()">
+                <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
+                  <path
+                    d="M9.663 17h4.673M12 3v1m6.364 1.636-.707.707M21 12h-1M4 12H3m3.343-5.657-.707-.707m2.828 9.9a5 5 0 1 1 7.072 0l-.548.547A3.374 3.374 0 0 0 14 18.469V19a2 2 0 1 1-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+                </svg>
+                Generar Análisis IA de ambas respuestas
+              </button>
+            </div>
+            }
+
+            @if (showInsightPanel() && insightResult().length > 0) {
+            <div class="insight-panel">
+              <div class="insight-panel__header">
+                <div class="insight-panel__title">
+                  <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
+                    <path
+                      d="M9.663 17h4.673M12 3v1m6.364 1.636-.707.707M21 12h-1M4 12H3m3.343-5.657-.707-.707m2.828 9.9a5 5 0 1 1 7.072 0l-.548.547A3.374 3.374 0 0 0 14 18.469V19a2 2 0 1 1-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+                  </svg>
+                  Análisis Comparativo IA
+                </div>
+                <button type="button" class="icon-btn" title="Cerrar análisis" (click)="closeInsightPanel()">
+                  <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M18 6 6 18M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+              <div class="insight-grid">
+                @for (r of insightResult(); track trackResponse($index, r)) {
+                <div class="insight-card">
+                  <span [ngClass]="['source-pill', sourceClass(r.source)]">
+                    {{ sourceLabel(r.source) }} · {{ r.model }}
+                  </span>
+                  <div class="response-content" [innerHTML]="cleanText(r.respuestaIa) | markdown"></div>
+                </div>
+                }
+              </div>
+            </div>
+            }
+
+          </div>
+          } @else {
+          <div class="empty-state empty-state--reader">
+            <svg class="empty-icon" viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M12 3v6l4 2M4 19h16M6 15h12" />
+            </svg>
+            <strong>Listo para trabajar</strong>
+            <span>Envia una consulta o selecciona una respuesta del historial.</span>
+          </div>
           }
         </div>
-      } @else if (selectedHistory()) {
-        <article class="history-detail">
-          <div class="detail-meta">
-            <span>{{ selectedHistory()!.model }}</span>
-            <time>{{ selectedHistory()!.fecha }}</time>
+      </section>
+
+      <section class="panel composer">
+        <form [formGroup]="promptForm" (ngSubmit)="processPrompt()">
+          <div class="composer-container">
+            <textarea id="prompt" formControlName="prompt" aria-label="Mensaje para ambos modelos"
+              placeholder="Escribe tu consulta aqui..." (keydown.enter)="onEnter($event)"></textarea>
+            <button type="submit" class="send-button" [disabled]="promptForm.invalid || isProcessing()">
+              @if (isProcessing()) {
+              <svg class="spinner" viewBox="0 0 24 24" fill="none">
+                <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="3" stroke-dasharray="32"
+                  stroke-dashoffset="16" stroke-linecap="round"></circle>
+              </svg>
+              } @else {
+              <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M22 2 11 13M22 2l-7 20-4-9-9-4 20-7Z" />
+              </svg>
+              }
+            </button>
           </div>
-          <section>
-            <h3>Prompt</h3>
-            <p>{{ cleanText(selectedHistory()!.prompt) }}</p>
-          </section>
-          <section class="full-answer">
-            <h3>Respuesta</h3>
-            <div class="response-content" [innerHTML]="cleanText(selectedHistory()!.respuestaIa) | markdown"></div>
-          </section>
-        </article>
-      } @else {
-        <div class="empty-state empty-state--reader">
-          <svg class="empty-icon" viewBox="0 0 24 24" aria-hidden="true">
-            <path d="M12 3v6l4 2M4 19h16M6 15h12" />
-          </svg>
-          <strong>Listo para trabajar</strong>
-          <span>Envia una consulta o selecciona una respuesta del historial.</span>
-        </div>
-      }
-    </section>
+
+          @if (submitted() && promptForm.controls.prompt.invalid && !isProcessing()) {
+          <p class="field-error">Minimo 3 caracteres para procesar.</p>
+          }
+
+          <div class="prompt-suggestions">
+            <button type="button"
+              (click)="usePrompt('Usa el contexto anterior y dame una respuesta mas concreta, con pasos accionables.')">
+              <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M4 7h16M4 12h10M4 17h7" />
+              </svg>
+              Accionar
+            </button>
+            <button type="button"
+              (click)="usePrompt('Compara las respuestas previas y dime cual es mas util, explicando por que.')">
+              <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M8 5v14M16 5v14M4 9h8M12 15h8" />
+              </svg>
+              Comparar
+            </button>
+            <button type="button"
+              (click)="usePrompt('Continua la conversacion anterior y propon la siguiente mejor accion.')">
+              <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M5 12h14M13 6l6 6-6 6" />
+              </svg>
+              Continuar
+            </button>
+          </div>
+        </form>
+      </section>
+    </main>
   </section>
 </main>
+
+@if (editingThread()) {
+<div class="modal-overlay" (click)="cancelarEdicion()" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+  <div class="modal" (click)="$event.stopPropagation()">
+    <div class="modal__header">
+      <h3 id="modal-title">
+        <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
+          <path
+            d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7M18.5 2.5a2.12 2.12 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+        </svg>
+        Editar y re-consultar
+      </h3>
+      <button type="button" class="icon-btn" title="Cerrar" (click)="cancelarEdicion()">
+        <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M18 6 6 18M6 6l12 12" />
+        </svg>
+      </button>
+    </div>
+
+    <p class="modal__hint">
+      Al confirmar, ambas IAs procesarán el nuevo prompt y el registro
+      <strong>#{{ editingThread()!.id }}</strong> se actualizará en el historial como uno nuevo.
+    </p>
+
+    <textarea class="modal__textarea" [value]="editPromptValue()"
+      (input)="editPromptValue.set($any($event.target).value)" placeholder="Escribe el nuevo prompt..." rows="5"
+      aria-label="Nuevo prompt"></textarea>
+
+    @if (editPromptValue().trim().length > 0 && editPromptValue().trim().length < 3) { <p class="field-error">Minimo 3
+      caracteres.</p>
+      }
+
+      <div class="modal__footer">
+        <button type="button" class="ghost-button" (click)="cancelarEdicion()" [disabled]="isUpdating()">
+          Cancelar
+        </button>
+        <button type="button" class="primary-action-button" (click)="confirmarActualizacion()"
+          [disabled]="editPromptValue().trim().length < 3 || isUpdating()">
+          @if (isUpdating()) {
+          <svg class="spinner" viewBox="0 0 24 24" fill="none">
+            <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="3" stroke-dasharray="32"
+              stroke-dashoffset="16" stroke-linecap="round"></circle>
+          </svg>
+          Procesando...
+          } @else {
+          <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M20 12a8 8 0 1 1-2.34-5.66M20 4v6h-6" />
+          </svg>
+          Actualizar y re-consultar
+          }
+        </button>
+      </div>
+  </div>
+</div>
+}

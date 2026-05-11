@@ -24,4 +24,17 @@ export class IAService {
   obtenerHistorialPorFuente(source: string): Observable<IAResponse[]> {
     return this.http.get<IAResponse[]>(IA_ENDPOINTS.historyBySource(source));
   }
+
+  actualizarPrompt(id: number, prompt: string): Observable<IAResponse[]> {
+    const body: PromptRequest = { prompt };
+    return this.http.put<IAResponse[]>(IA_ENDPOINTS.historyById(id), body);
+  }
+
+  eliminarPorId(id: number): Observable<void> {
+    return this.http.delete<void>(IA_ENDPOINTS.historyById(id));
+  }
+
+  eliminarTodo(): Observable<void> {
+    return this.http.delete<void>(IA_ENDPOINTS.deleteAll);
+  }
 }
