@@ -11,18 +11,18 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout
+      - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Setup Node
+      - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: 20
 
       - name: Install dependencies
         run: npm install
 
-      - name: Build Angular
+      - name: Build Angular project
         run: npm run build -- --configuration=production
 
       - name: SonarCloud Analysis
@@ -34,13 +34,13 @@ jobs:
             -Dsonar.projectKey=AlejandroCaycho_AS241S5_AEJ_07-fe \
             -Dsonar.organization=alejandrocaycho \
             -Dsonar.host.url=https://sonarcloud.io \
-            -Dsonar.token=${{ secrets.SONAR_TOKEN }}
+            -Dsonar.login=${{ secrets.SONAR_TOKEN }}
 
-      - name: Build Docker
+      - name: Build Docker Image
         run: docker build -t carloscaycho/frontend:latest .
 
-      - name: Login DockerHub
+      - name: Login to DockerHub
         run: echo ${{ secrets.DOCKER_PASS }} | docker login -u ${{ secrets.DOCKER_USER }} --password-stdin
 
-      - name: Push Docker
+      - name: Push Docker Image
         run: docker push carloscaycho/frontend:latest
