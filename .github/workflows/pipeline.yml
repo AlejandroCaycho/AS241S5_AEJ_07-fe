@@ -2,9 +2,9 @@ name: Frontend CI/CD
 
 on:
   push:
-    branches: [develop, main]
+    branches: [main, develop]
   pull_request:
-    branches: [develop, main]
+    branches: [main, develop]
 
 jobs:
   frontend:
@@ -14,26 +14,27 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Node 20
+      - name: Setup Node
         uses: actions/setup-node@v4
         with:
           node-version: '20'
 
-      - name: Install
+      - name: Install dependencies
         run: npm install
 
       - name: Build Angular
-        run: npm run build
+        run: npm run build -- --configuration=production
 
       - name: SonarCloud Analysis
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         run: |
           npm install -g sonar-scanner
           sonar-scanner \
             -Dsonar.projectKey=AlejandroCaycho_AS241S5_AEJ_07-fe \
             -Dsonar.organization=alejandrocaycho \
-            -Dsonar.sources=. \
             -Dsonar.host.url=https://sonarcloud.io \
-            -Dsonar.login=${{ secrets.SONAR_TOKEN }}
+            -Dsonar.token=${{ secrets.SONAR_TOKEN }}
 
       - name: Build Docker
         run: docker build -t carloscaycho/frontend:latest .
