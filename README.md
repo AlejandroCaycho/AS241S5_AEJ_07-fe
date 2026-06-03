@@ -1,4 +1,4 @@
-# AS241S5_AEJ_07 Frontends
+# AS241S5_AEJ_07 Frontend
 
 Frontend Angular para consumir el backend reactivo de IA.
 
